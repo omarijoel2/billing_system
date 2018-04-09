@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+    <head>
+	      <meta charset=utf-8 />
+	      <title>Order</title>
+
+        {% load static %}
+        <script src="{% static 'pos/js/jquery-3.2.1.min.js' %}">
+        </script>
+
+        <link rel="stylesheet" href="{% static 'pos/css/bootstrap.min.css' %}">
+
+        <script src="{% static 'pos/js/bootstrap.bundle.min.js' %}">
+        </script>
+
+        <link rel="apple-touch-icon" sizes="57x57" href="{% static 'pos/img/apple-touch-icon-57x57.png' %}">
+        <link rel="apple-touch-icon" sizes="60x60" href="{% static 'pos/img/apple-touch-icon-60x60.png' %}">
+        <link rel="apple-touch-icon" sizes="72x72" href="{% static 'pos/img/apple-touch-icon-72x72.png' %}">
+        <link rel="apple-touch-icon" sizes="76x76" href="{% static 'pos/img/apple-touch-icon-76x76.png' %}">
+        <link rel="apple-touch-icon" sizes="114x114" href="{% static 'pos/img/apple-touch-icon-114x114.png' %}">
+        <link rel="apple-touch-icon" sizes="120x120" href="{% static 'pos/img/apple-touch-icon-120x120.png' %}">
+        <link rel="apple-touch-icon" sizes="144x144" href="{% static 'pos/img/apple-touch-icon-144x144.png' %}">
+        <link rel="apple-touch-icon" sizes="152x152" href="{% static 'pos/img/apple-touch-icon-152x152.png' %}">
+        <link rel="apple-touch-icon" sizes="180x180" href="{% static 'pos/img/apple-touch-icon-180x180.png' %}">
+        <link rel="icon" type="image/png" sizes="32x32" href="{% static "pos/img/favicon-32x32.png" %}" >
+        <link rel="icon" type="image/png" sizes="192x192" href="{% static "pos/img/android-chrome-192x192.png" %}" >
+        <link rel="icon" type="image/png" sizes="96x96" href="{% static "pos/img/favicon-96x96.png" %}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{% static "pos/img/favicon-16x16.png" %}">
+        <link rel="manifest" href="{% static "pos/manifest.json" %}">
+        <link rel="mask-icon" href="{% static "pos/img/safari-pinned-tab.svg" color="#5bbad5" %}">
+        <meta name="msapplication-TileColor" content="#da532c">
+        <meta name="msapplication-TileImage" content="{% static "pos/img/mstile-144x144.png" %}">
+        <meta name="theme-color" content="#ffffff">
+    </head>
+    <body>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <a class="navbar-brand" href="#">Billing_master</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav mr-auto">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#" onclick="reset();">Clear Order</a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link active dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Payment
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <a class="dropdown-item" href="#" onclick="payed('cash');">Cash</a>
+                                <a class="dropdown-item" href="#" onclick="payed('card');">Card</a>
+                            </div>
+                        </li>
+                        {% if request.user.is_staff %}
+                        <li class="nav-item">
+                            <a id="resetcashpopover" tabindex="0" class="nav-link active dropdown-toggle" role="button" data-toggle="popover" data-placement="bottom"  title="Reset Cash"
+                               style="cursor:pointer;"
+                               data-content="<div class='row'><div class='col-md-12'><input type='number' value='0' name='resetcashamount' id='resetcashinput' step='0.01'></a></div></div>
+                                   <div class='row' style='margin-top:1em;'><div class='col-md-12'><button type='button' class='btn btn-primary' onclick='resetCash();'>Reset</button></div></div>">
+                                Reset Cash
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'view_stock' %}" class="nav-link active" title="View Stock" style="cursor:pointer;">View Stock</a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{% url 'admin:index' %}">Admin</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{% url 'logout' %}">Log Out</a>
+                        </li>
+                    </ul>
+                </div>
+        </nav>
+        <div id="cashresetdiv" class="alert alert-success alert-dismissable" style="display:none;" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            Successfully reset the cash amount to {{ currency }}<span id="cashresetamount"></span>.
+        </div>
+	      <div class="container-fluid">
+	          <div class="row">
+	              <div class="col-sm-6">
+		                <div class="row">
+			                  {% if list %}
+			                  {% for product in list %}
+			                  <div class="col-sm-6 col-md-3" style="padding-top: 5px; padding-bottom: 5px;">
+                            <a role="button" class="btn btn-primary btn-block"
+					                     href="#"
+							                 onclick="addProduct({{ product.id }});">
+				                        {{ product.name }}<br>{{ currency }}{{ product.price }}
+                            </a>
+                        </div>
+			                  {% endfor %}
+			                  {% endif %}
+		                </div>
+		            </div>
+	              <div class="col-sm-6">
+                    <div id="additiondiv">
+                    </div>
+		            </div>
+	          </div>
+	      </div>
+	      <script>
+	       function addProduct(productID) {
+		         $('#additiondiv').load("{% url 'order_add_product' '' %}" + productID);
+		         console.log("Ordered number: " + productID);
+	       }
+
+	       function reset() {
+		         $('#additiondiv').load("{% url 'reset_order' %}");
+		         console.log("Reset addition");
+	       }
+
+	       function payed(method) {
+             if (confirm("Do you want to print the addition?")) {
+                 window.open("{% url 'print_current_order' %}", "_blank").focus();
+             }
+             if (method == "cash") {
+		             $('#additiondiv').load("{% url 'payment_cash' %}");
+             } else if (method == "card") {
+		             $('#additiondiv').load("{% url 'payment_card' %}");
+             }
+		         console.log("Person payed");
+	       }
+
+	       function removeProduct(product) {
+             console.log("remove " + product);
+		         $('#additiondiv').load("{%url 'order_remove_product' '' %}" + encodeURIComponent(product));
+	       }
+
+         function resetCash() {
+             var req = new XMLHttpRequest();
+             req.open('GET', "{% url 'cash' '' %}" + encodeURIComponent($("#resetcashinput").val()), false);
+             req.send(null)
+             console.log('trying to reset cash');
+
+             if (req.status == 200) {
+                 $('#cashresetamount').text(encodeURIComponent($("#resetcashinput").val()));
+                 $('#cashresetdiv').show()
+                 $('#resetcashpopover').popover('hide');
+                 console.log('succesfully reset cash');
+             }
+         }
+
+	       $(document).ready(function() {
+		         // This shallst load /addition in its div
+             $('#resetcashpopover').popover({html:true});
+		         $('#additiondiv').load("{% url 'addition' %}");
+	       });
+	      </script>
+    </body>
+</html>
